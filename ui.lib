@@ -93,24 +93,65 @@ end
 -- === ОСНОВНАЯ ФУНКЦИЯ ===
 
 function Library:CreateWindow(config)
+	-- 1. ЗАЩИТА ОТ ОШИБОК ВВОДА
+	if type(config) == "string" then
+		-- Если пользователь случайно передал строку по-старому: CreateWindow("My Script")
+		config = { Title = config }
+	end
 	config = config or {}
-	local TitleText = config.Title or "Frutiger Aero"
-	local SelectedTheme = config.Theme or "Light"
-	local OpenKey = config.Key or Enum.KeyCode.M
 	
-	CurrentTheme = Themes[SelectedTheme] or Themes.Light
+	-- Проверяем Title (должен быть строкой)
+	local TitleText = "Frutiger Aero"
+	if type(config.Title) == "string" then
+		TitleText = config.Title
+	elseif type(config.Title) == "table" then
+		-- Если случайно передал таблицу, берем первый элемент или стандарт
+		TitleText = config.Title[1] or tostring(config.Title)
+	elseif config.Title then
+		TitleText = tostring(config.Title)
+	end
 
+	-- Проверяем Theme
+	local SelectedTheme = config.Theme or "Light"
+	CurrentTheme = Themes[SelectedTheme] or Themes.Light
+	
+	-- Проверяем Key (Кнопка открытия)
+	local OpenKey = Enum.KeyCode.M
+	if config.Key then
+		if typeof(config.Key) == "EnumItem" then
+			OpenKey = config.Key
+		elseif type(config.Key) == "string" then
+			-- Пытаемся найти кнопку по имени строки (например "M" или "RightShift")
+			pcall(function()
+				OpenKey = Enum.KeyCode[config.Key]
+			end)
+		end
+	end
+	
+	-- Безопасное имя кнопки для текста
+	local KeyName = "M"
+	if OpenKey and typeof(OpenKey) == "EnumItem" then
+		KeyName = OpenKey.Name
+	else
+		KeyName = tostring(OpenKey)
+	end
+
+	-- === СОЗДАНИЕ GUI ===
+	
 	local ScreenGui = Instance.new("ScreenGui")
 	ScreenGui.Name = "AeroLib_V2"
-	ScreenGui.Parent = game.CoreGui -- game.Players.LocalPlayer.PlayerGui
+	if RunService:IsStudio() then
+		ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	else
+		ScreenGui.Parent = game.CoreGui
+	end
 	
-	-- Acrylic Blur Effect (В Lighting)
+	-- Acrylic Blur Effect
 	local BlurEffect = Instance.new("BlurEffect")
 	BlurEffect.Name = "AeroBlur"
 	BlurEffect.Size = 0
 	BlurEffect.Parent = Lighting
 	
-	-- Функция переключения размытия
 	local function SetBlur(enabled)
 		TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = enabled and 24 or 0}):Play()
 	end
@@ -121,16 +162,17 @@ function Library:CreateWindow(config)
 	MainFrame.Size = UDim2.new(0, 550, 0, 380)
 	MainFrame.Position = UDim2.new(0.5, -275, 0.5, -190)
 	MainFrame.BackgroundColor3 = CurrentTheme.WindowEnd
-	MainFrame.BackgroundTransparency = 0.1 -- Немного прозрачности для "стекла"
+	MainFrame.BackgroundTransparency = 0.1
 	MainFrame.BorderSizePixel = 0
 	MainFrame.Parent = ScreenGui
 	
-	SetBlur(true) -- Включаем блюр при старте
+	SetBlur(true)
 	
-	-- Уведомление "Press M"
+	-- Уведомление
 	local NotifyFrame = Instance.new("Frame")
+	NotifyFrame.Name = "NotifyFrame"
 	NotifyFrame.Size = UDim2.new(0, 200, 0, 40)
-	NotifyFrame.Position = UDim2.new(0.5, -100, 1, 100) -- Спрятано внизу
+	NotifyFrame.Position = UDim2.new(0.5, -100, 1, 100)
 	NotifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	NotifyFrame.BackgroundTransparency = 0.5
 	NotifyFrame.Parent = ScreenGui
@@ -140,9 +182,11 @@ function Library:CreateWindow(config)
 	NotifyCorner.Parent = NotifyFrame
 	
 	local NotifyText = Instance.new("TextLabel")
+	NotifyText.Name = "NotifyText"
 	NotifyText.Size = UDim2.new(1,0,1,0)
 	NotifyText.BackgroundTransparency = 1
-	NotifyText.Text = "Нажми '".. OpenKey.Name .."' чтобы открыть"
+	-- ВОТ ТУТ БЫЛА ОШИБКА, ТЕПЕРЬ ОНА ИСПРАВЛЕНА:
+	NotifyText.Text = "Нажми '".. KeyName .."' чтобы открыть"
 	NotifyText.TextColor3 = Color3.fromRGB(255, 255, 255)
 	NotifyText.Font = Enum.Font.GothamBold
 	NotifyText.TextSize = 14
@@ -211,7 +255,8 @@ function Library:CreateWindow(config)
 
 	-- Заголовок
 	local Title = Instance.new("TextLabel")
-	Title.Text = TitleText
+	-- ИСПОЛЬЗУЕМ ПРОВЕРЕННУЮ ПЕРЕМЕННУЮ TitleText
+	Title.Text = TitleText 
 	Title.Size = UDim2.new(1, -100, 1, 0)
 	Title.Position = UDim2.new(0, 12, 0, 0)
 	Title.BackgroundTransparency = 1
@@ -256,7 +301,7 @@ function Library:CreateWindow(config)
 		Minimized = not Minimized
 		if Minimized then
 			TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 550, 0, 35)}):Play()
-			Stroke.Enabled = false -- скрываем обводку снизу чтобы красивее было
+			Stroke.Enabled = false
 		else
 			TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 550, 0, FullHeight)}):Play()
 			Stroke.Enabled = true
@@ -305,6 +350,7 @@ function Library:CreateWindow(config)
 	PagesFolder.Name = "Pages"
 	PagesFolder.Parent = PageContainer
 
+	-- Дальше идет код Табов и Элементов (он был в порядке, его можно оставить или просто скопировать весь ModuleScript заново)
 	-- === ФУНКЦИОНАЛ БИБЛИОТЕКИ ===
 	local Window = {}
 

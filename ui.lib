@@ -142,7 +142,16 @@ function Library:CreateWindow(config)
 	local NotifyText = Instance.new("TextLabel")
 	NotifyText.Size = UDim2.new(1,0,1,0)
 	NotifyText.BackgroundTransparency = 1
-	NotifyText.Text = "Нажми '".. OpenKey.Name .."' чтобы открыть"
+	
+	-- БЕЗОПАСНАЯ ПРОВЕРКА ИМЕНИ КЛАВИШИ
+	local KeyName = "M" -- Дефолт
+	if typeof(OpenKey) == "EnumItem" then
+		KeyName = OpenKey.Name
+	elseif type(OpenKey) == "string" then
+		KeyName = OpenKey
+	end
+	
+	NotifyText.Text = "Нажми '".. KeyName .."' чтобы открыть"
 	NotifyText.TextColor3 = Color3.fromRGB(255, 255, 255)
 	NotifyText.Font = Enum.Font.GothamBold
 	NotifyText.TextSize = 14

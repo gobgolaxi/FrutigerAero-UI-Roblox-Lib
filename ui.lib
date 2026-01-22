@@ -143,7 +143,7 @@ function Library:CreateWindow(settings)
 		TweenService:Create(Blur, TweenInfo.new(0.5), {Size = targetSize}):Play()
 	end
 	
-	SetBlur(true) -- Включаем сразу
+	SetBlur(false) -- Включаем сразу
 
 	-- Главный Фрейм
 	local MainFrame = Instance.new("Frame")

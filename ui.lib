@@ -152,7 +152,7 @@ function Library:CreateWindow(settings)
 	MainFrame.Position = UDim2.new(0.5, -275, 0.5, -200)
 	MainFrame.BackgroundColor3 = CurrentTheme.WindowEnd
 	MainFrame.BackgroundTransparency = CurrentTheme.GlassTransparency
-	MainFrame.ClipsDescendants = true -- Важно для сворачивания
+	MainFrame.ClipsDescendants = true
 	MainFrame.Parent = ScreenGui
 	
 	local MainCorner = Instance.new("UICorner")
@@ -224,14 +224,7 @@ function Library:CreateWindow(settings)
 
 	MakeDraggable(TopBar, MainFrame)
 	
-	-- === КНОПКИ УПРАВЛЕНИЯ (Свернуть/Закрыть) ===
-	local ControlContainer = Instance.new("Frame")
-	ControlContainer.Size = UDim2.new(0, 80, 1, 0)
-	ControlContainer.Position = UDim2.new(1, -85, 0, 0)
-	ControlContainer.BackgroundTransparency = 1
-	ControlContainer.Parent = TopBar
-	
-	-- Кнопка закрытия (X)
+	-- === КНОПКА ЗАКРЫТИЯ ===
 	local CloseBtn = Instance.new("TextButton")
 	CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 	CloseBtn.Position = UDim2.new(1, -35, 0.5, -15)
@@ -241,58 +234,69 @@ function Library:CreateWindow(settings)
 	CloseBtn.Font = Enum.Font.GothamBold
 	CloseBtn.TextColor3 = Color3.new(1,1,1)
 	CloseBtn.TextSize = 14
-	CloseBtn.Parent = ControlContainer
+	CloseBtn.Parent = TopBar
 	
 	local CloseCorner = Instance.new("UICorner")
 	CloseCorner.CornerRadius = UDim.new(0, 6)
 	CloseCorner.Parent = CloseBtn
 	
-	-- Кнопка сворачивания (_)
-	local MinBtn = Instance.new("TextButton")
-	MinBtn.Size = UDim2.new(0, 30, 0, 30)
-	MinBtn.Position = UDim2.new(1, -70, 0.5, -15)
-	MinBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	MinBtn.BackgroundTransparency = 0.8
-	MinBtn.Text = "_"
-	MinBtn.Font = Enum.Font.GothamBold
-	MinBtn.TextColor3 = Color3.new(1,1,1)
-	MinBtn.TextSize = 14
-	MinBtn.TextYAlignment = Enum.TextYAlignment.Bottom
-	MinBtn.Parent = ControlContainer
+	-- === ПЛАВАЮЩАЯ КНОПКА ДЛЯ ОТКРЫТИЯ ===
+	local OpenButton = Instance.new("TextButton")
+	OpenButton.Name = "OpenButton"
+	OpenButton.Size = UDim2.new(0, 50, 0, 50)
+	OpenButton.Position = UDim2.new(0, 20, 0, 20)
+	OpenButton.BackgroundColor3 = CurrentTheme.HeaderStart
+	OpenButton.BackgroundTransparency = 0.3
+	OpenButton.Text = "☰"
+	OpenButton.TextColor3 = Color3.new(1, 1, 1)
+	OpenButton.Font = Enum.Font.GothamBold
+	OpenButton.TextSize = 20
+	OpenButton.Visible = false -- Скрыта по умолчанию
+	OpenButton.Parent = ScreenGui
 	
-	local MinCorner = Instance.new("UICorner")
-	MinCorner.CornerRadius = UDim.new(0, 6)
-	MinCorner.Parent = MinBtn
+	local OpenButtonCorner = Instance.new("UICorner")
+	OpenButtonCorner.CornerRadius = UDim.new(0, 10)
+	OpenButtonCorner.Parent = OpenButton
 	
-	-- Логика Закрытия
+	local OpenButtonStroke = Instance.new("UIStroke")
+	OpenButtonStroke.Color = CurrentTheme.Stroke
+	OpenButtonStroke.Thickness = 2
+	OpenButtonStroke.Parent = OpenButton
+	
+	AddGloss(OpenButton)
+	
+	-- Делаем кнопку открытия перетаскиваемой
+	MakeDraggable(OpenButton, OpenButton)
+	
+	-- === ЛОГИКА ОТКРЫТИЯ/ЗАКРЫТИЯ ===
 	local isOpen = true
-	local function ToggleUI()
-		isOpen = not isOpen
-		ScreenGui.Enabled = isOpen
-		SetBlur(isOpen)
-		if not isOpen then
-			Library:Notify("Нажми '"..ToggleKey.Name.."' чтобы открыть меню")
-		end
+	
+	local function CloseUI()
+		isOpen = false
+		MainFrame.Visible = false
+		OpenButton.Visible = true
+		SetBlur(false)
+		Library:Notify("Нажми '"..ToggleKey.Name.."' или кнопку для открытия меню")
 	end
 	
-	CloseBtn.MouseButton1Click:Connect(ToggleUI)
+	local function OpenUI()
+		isOpen = true
+		MainFrame.Visible = true
+		OpenButton.Visible = false
+		SetBlur(true)
+	end
 	
+	CloseBtn.MouseButton1Click:Connect(CloseUI)
+	OpenButton.MouseButton1Click:Connect(OpenUI)
+	
+	-- Горячая клавиша
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if not processed and input.KeyCode == ToggleKey then
-			ToggleUI()
-		end
-	end)
-	
-	-- Логика Сворачивания
-	local isMinimized = false
-	local originalHeight = MainFrame.Size.Y.Offset
-	
-	MinBtn.MouseButton1Click:Connect(function()
-		isMinimized = not isMinimized
-		if isMinimized then
-			TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {Size = UDim2.new(0, 550, 0, 40)}):Play()
-		else
-			TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {Size = UDim2.new(0, 550, 0, originalHeight)}):Play()
+			if isOpen then
+				CloseUI()
+			else
+				OpenUI()
+			end
 		end
 	end)
 

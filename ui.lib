@@ -87,20 +87,32 @@ local function MakeDraggable(topbarobject, object)
 	end)
 end
 
--- Уведомление снизу
+-- Уведомление снизу с авто-шириной
 function Library:Notify(text)
 	local ScreenGui = game.CoreGui:FindFirstChild("AeroLib") or game.Players.LocalPlayer.PlayerGui:FindFirstChild("AeroLib")
 	if not ScreenGui then return end
 	
+	-- Определяем ширину по тексту
+	local tempLabel = Instance.new("TextLabel")
+	tempLabel.Font = Enum.Font.GothamBold
+	tempLabel.TextSize = 14
+	tempLabel.Text = text
+	
+	-- Приблизительный расчет ширины (примерно 8 пикселей на символ)
+	local textWidth = math.max(200, #text * 8 + 40)
+	tempLabel:Destroy()
+	
+	-- Создаем уведомление
 	local Notif = Instance.new("TextLabel")
 	Notif.Text = text
-	Notif.Size = UDim2.new(0, 200, 0, 40)
-	Notif.Position = UDim2.new(0.5, -100, 1, 0) -- Старт снизу
+	Notif.Size = UDim2.new(0, textWidth, 0, 40)
+	Notif.Position = UDim2.new(0.5, -textWidth/2, 1, 0) -- Старт снизу
 	Notif.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	Notif.BackgroundTransparency = 0.5
 	Notif.TextColor3 = Color3.fromRGB(255, 255, 255)
 	Notif.Font = Enum.Font.GothamBold
 	Notif.TextSize = 14
+	Notif.TextWrapped = true
 	Notif.Parent = ScreenGui
 	
 	local Corner = Instance.new("UICorner")
@@ -108,10 +120,10 @@ function Library:Notify(text)
 	Corner.Parent = Notif
 	
 	-- Анимация появления
-	TweenService:Create(Notif, TweenInfo.new(0.5, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, -100, 1, -60)}):Play()
+	TweenService:Create(Notif, TweenInfo.new(0.5, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, -textWidth/2, 1, -60)}):Play()
 	
 	task.delay(3, function()
-		TweenService:Create(Notif, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {Position = UDim2.new(0.5, -100, 1, 0)}):Play()
+		TweenService:Create(Notif, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {Position = UDim2.new(0.5, -textWidth/2, 1, 0)}):Play()
 		task.wait(0.5)
 		Notif:Destroy()
 	end)
@@ -555,6 +567,200 @@ function Library:CreateWindow(settings)
 					isDragging = false
 				end
 			end)
+		end
+		
+		-- НОВЫЙ: ListSetting - множественный выбор
+		function Elements:ListSetting(text, options, default, callback)
+			local Frame = Instance.new("Frame")
+			Frame.Size = UDim2.new(1, 0, 0, 35 + (#options * 25))
+			Frame.BackgroundColor3 = CurrentTheme.ElementBg
+			Frame.Parent = Page
+			
+			local Corner = Instance.new("UICorner")
+			Corner.CornerRadius = UDim.new(0, 8)
+			Corner.Parent = Frame
+			
+			local Label = Instance.new("TextLabel")
+			Label.Text = text
+			Label.Position = UDim2.new(0, 10, 0, 5)
+			Label.Size = UDim2.new(1, -20, 0, 20)
+			Label.BackgroundTransparency = 1
+			Label.TextXAlignment = Enum.TextXAlignment.Left
+			Label.TextColor3 = CurrentTheme.Text
+			Label.Font = Enum.Font.Gotham
+			Label.TextSize = 14
+			Label.Parent = Frame
+			
+			local OptionsFrame = Instance.new("Frame")
+			OptionsFrame.Size = UDim2.new(1, -20, 0, #options * 25)
+			OptionsFrame.Position = UDim2.new(0, 10, 0, 30)
+			OptionsFrame.BackgroundTransparency = 1
+			OptionsFrame.Parent = Frame
+			
+			local OptionsLayout = Instance.new("UIListLayout")
+			OptionsLayout.Padding = UDim.new(0, 5)
+			OptionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+			OptionsLayout.Parent = OptionsFrame
+			
+			local selectedOptions = default or {}
+			
+			for i, option in pairs(options) do
+				local OptionFrame = Instance.new("TextButton")
+				OptionFrame.Size = UDim2.new(1, 0, 0, 20)
+				OptionFrame.BackgroundTransparency = 1
+				OptionFrame.Text = ""
+				OptionFrame.AutoButtonColor = false
+				OptionFrame.Parent = OptionsFrame
+				
+				local CheckBox = Instance.new("Frame")
+				CheckBox.Size = UDim2.new(0, 15, 0, 15)
+				CheckBox.Position = UDim2.new(0, 0, 0.5, -7.5)
+				CheckBox.BackgroundColor3 = Color3.fromRGB(240,240,240)
+				CheckBox.Parent = OptionFrame
+				
+				local CheckCorner = Instance.new("UICorner")
+				CheckCorner.CornerRadius = UDim.new(0, 3)
+				CheckCorner.Parent = CheckBox
+				
+				local CheckIndicator = Instance.new("Frame")
+				CheckIndicator.Size = UDim2.new(1, -4, 1, -4)
+				CheckIndicator.Position = UDim2.new(0, 2, 0, 2)
+				CheckIndicator.BackgroundColor3 = CurrentTheme.Accent
+				CheckIndicator.BackgroundTransparency = selectedOptions[option] and 0 or 1
+				CheckIndicator.Parent = CheckBox
+				
+				local IndCorner = Instance.new("UICorner")
+				IndCorner.CornerRadius = UDim.new(0, 2)
+				IndCorner.Parent = CheckIndicator
+				
+				local OptionLabel = Instance.new("TextLabel")
+				OptionLabel.Text = option
+				OptionLabel.Size = UDim2.new(1, -25, 1, 0)
+				OptionLabel.Position = UDim2.new(0, 20, 0, 0)
+				OptionLabel.BackgroundTransparency = 1
+				OptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+				OptionLabel.TextColor3 = CurrentTheme.Text
+				OptionLabel.Font = Enum.Font.Gotham
+				OptionLabel.TextSize = 12
+				OptionLabel.Parent = OptionFrame
+				
+				OptionFrame.MouseButton1Click:Connect(function()
+					selectedOptions[option] = not selectedOptions[option]
+					TweenService:Create(CheckIndicator, TweenInfo.new(0.2), {
+						BackgroundTransparency = selectedOptions[option] and 0 or 1
+					}):Play()
+					
+					-- Преобразуем таблицу в массив выбранных опций
+					local selectedArray = {}
+					for opt, isSelected in pairs(selectedOptions) do
+						if isSelected then
+							table.insert(selectedArray, opt)
+						end
+					end
+					
+					callback(selectedOptions, selectedArray)
+				end)
+			end
+		end
+		
+		-- НОВЫЙ: ModeSetting - выбор одного из нескольких
+		function Elements:ModeSetting(text, options, default, callback)
+			local Frame = Instance.new("Frame")
+			Frame.Size = UDim2.new(1, 0, 0, 35 + (#options * 25))
+			Frame.BackgroundColor3 = CurrentTheme.ElementBg
+			Frame.Parent = Page
+			
+			local Corner = Instance.new("UICorner")
+			Corner.CornerRadius = UDim.new(0, 8)
+			Corner.Parent = Frame
+			
+			local Label = Instance.new("TextLabel")
+			Label.Text = text
+			Label.Position = UDim2.new(0, 10, 0, 5)
+			Label.Size = UDim2.new(1, -20, 0, 20)
+			Label.BackgroundTransparency = 1
+			Label.TextXAlignment = Enum.TextXAlignment.Left
+			Label.TextColor3 = CurrentTheme.Text
+			Label.Font = Enum.Font.Gotham
+			Label.TextSize = 14
+			Label.Parent = Frame
+			
+			local OptionsFrame = Instance.new("Frame")
+			OptionsFrame.Size = UDim2.new(1, -20, 0, #options * 25)
+			OptionsFrame.Position = UDim2.new(0, 10, 0, 30)
+			OptionsFrame.BackgroundTransparency = 1
+			OptionsFrame.Parent = Frame
+			
+			local OptionsLayout = Instance.new("UIListLayout")
+			OptionsLayout.Padding = UDim.new(0, 5)
+			OptionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+			OptionsLayout.Parent = OptionsFrame
+			
+			local selectedMode = default or options[1]
+			local modeButtons = {}
+			
+			for i, option in pairs(options) do
+				local OptionFrame = Instance.new("TextButton")
+				OptionFrame.Size = UDim2.new(1, 0, 0, 20)
+				OptionFrame.BackgroundTransparency = 1
+				OptionFrame.Text = ""
+				OptionFrame.AutoButtonColor = false
+				OptionFrame.Parent = OptionsFrame
+				
+				local RadioOuter = Instance.new("Frame")
+				RadioOuter.Size = UDim2.new(0, 15, 0, 15)
+				RadioOuter.Position = UDim2.new(0, 0, 0.5, -7.5)
+				RadioOuter.BackgroundColor3 = Color3.fromRGB(240,240,240)
+				RadioOuter.Parent = OptionFrame
+				
+				local RadioCorner = Instance.new("UICorner")
+				RadioCorner.CornerRadius = UDim.new(1, 0)
+				RadioCorner.Parent = RadioOuter
+				
+				local RadioIndicator = Instance.new("Frame")
+				RadioIndicator.Size = UDim2.new(0, 7, 0, 7)
+				RadioIndicator.Position = UDim2.new(0.5, -3.5, 0.5, -3.5)
+				RadioIndicator.BackgroundColor3 = CurrentTheme.Accent
+				RadioIndicator.BackgroundTransparency = option == selectedMode and 0 or 1
+				RadioIndicator.Parent = RadioOuter
+				
+				local RadioInnerCorner = Instance.new("UICorner")
+				RadioInnerCorner.CornerRadius = UDim.new(1, 0)
+				RadioInnerCorner.Parent = RadioIndicator
+				
+				local OptionLabel = Instance.new("TextLabel")
+				OptionLabel.Text = option
+				OptionLabel.Size = UDim2.new(1, -25, 1, 0)
+				OptionLabel.Position = UDim2.new(0, 20, 0, 0)
+				OptionLabel.BackgroundTransparency = 1
+				OptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+				OptionLabel.TextColor3 = CurrentTheme.Text
+				OptionLabel.Font = Enum.Font.Gotham
+				OptionLabel.TextSize = 12
+				OptionLabel.Parent = OptionFrame
+				
+				modeButtons[option] = {
+					Frame = OptionFrame,
+					Indicator = RadioIndicator
+				}
+				
+				OptionFrame.MouseButton1Click:Connect(function()
+					-- Сбрасываем все индикаторы
+					for mode, btnData in pairs(modeButtons) do
+						TweenService:Create(btnData.Indicator, TweenInfo.new(0.2), {
+							BackgroundTransparency = 1
+						}):Play()
+					end
+					
+					-- Включаем выбранный
+					selectedMode = option
+					TweenService:Create(modeButtons[option].Indicator, TweenInfo.new(0.2), {
+						BackgroundTransparency = 0
+					}):Play()
+					
+					callback(selectedMode)
+				end)
+			end
 		end
 		
 		return Elements

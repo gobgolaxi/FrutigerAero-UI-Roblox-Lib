@@ -13,10 +13,13 @@ local Themes = {
 		HeaderStart = Color3.fromRGB(0, 191, 255),
 		HeaderEnd = Color3.fromRGB(0, 100, 200),
 		ElementBg = Color3.fromRGB(255, 255, 255),
+		ElementBgDark = Color3.fromRGB(240, 240, 240),
 		Text = Color3.fromRGB(20, 20, 20),
 		Accent = Color3.fromRGB(50, 205, 50), -- Lime Green
 		Stroke = Color3.fromRGB(100, 150, 200),
-		GlassTransparency = 0.2
+		GlassTransparency = 0.2,
+		TextBoxBg = Color3.fromRGB(240, 240, 240),
+		CheckBoxBg = Color3.fromRGB(240, 240, 240)
 	},
 	Dark = {
 		WindowStart = Color3.fromRGB(45, 45, 50),
@@ -24,10 +27,13 @@ local Themes = {
 		HeaderStart = Color3.fromRGB(0, 120, 215), -- Deep Blue
 		HeaderEnd = Color3.fromRGB(0, 60, 120),
 		ElementBg = Color3.fromRGB(60, 60, 65),
+		ElementBgDark = Color3.fromRGB(50, 50, 55),
 		Text = Color3.fromRGB(240, 240, 240),
 		Accent = Color3.fromRGB(0, 255, 255), -- Cyan Neon
 		Stroke = Color3.fromRGB(80, 80, 90),
-		GlassTransparency = 0.15
+		GlassTransparency = 0.15,
+		TextBoxBg = Color3.fromRGB(40, 40, 45),
+		CheckBoxBg = Color3.fromRGB(70, 70, 75)
 	},
 	Purple = {
 		WindowStart = Color3.fromRGB(230, 230, 250),
@@ -35,10 +41,13 @@ local Themes = {
 		HeaderStart = Color3.fromRGB(147, 112, 219),
 		HeaderEnd = Color3.fromRGB(102, 51, 153),
 		ElementBg = Color3.fromRGB(255, 255, 255),
+		ElementBgDark = Color3.fromRGB(245, 240, 245),
 		Text = Color3.fromRGB(20, 20, 20),
 		Accent = Color3.fromRGB(186, 85, 211), -- Medium Orchid
 		Stroke = Color3.fromRGB(180, 160, 220),
-		GlassTransparency = 0.15
+		GlassTransparency = 0.15,
+		TextBoxBg = Color3.fromRGB(240, 240, 240),
+		CheckBoxBg = Color3.fromRGB(240, 240, 240)
 	}
 }
 
@@ -504,6 +513,141 @@ function Library:CreateWindow(settings)
 	CloseBtn.MouseButton1Click:Connect(CloseUI)
 	OpenButton.MouseButton1Click:Connect(OpenUI)
 	
+	-- Храним все созданные элементы для обновления темы
+	local uiElements = {
+		buttons = {},
+		toggles = {},
+		sliders = {},
+		textInputs = {},
+		listSettings = {},
+		modeSettings = {}
+	}
+	
+	-- Функция для обновления всех элементов при смене темы
+	local function UpdateAllElementsTheme()
+		-- Обновляем кнопки
+		for _, btnData in pairs(uiElements.buttons) do
+			TweenService:Create(btnData.Button, TweenInfo.new(0.3), {
+				BackgroundColor3 = CurrentTheme.ElementBg,
+				TextColor3 = CurrentTheme.Text
+			}):Play()
+			if btnData.Stroke then
+				TweenService:Create(btnData.Stroke, TweenInfo.new(0.3), {
+					Color = CurrentTheme.Stroke
+				}):Play()
+			end
+		end
+		
+		-- Обновляем тогглы
+		for _, toggleData in pairs(uiElements.toggles) do
+			TweenService:Create(toggleData.Frame, TweenInfo.new(0.3), {
+				BackgroundColor3 = CurrentTheme.ElementBg
+			}):Play()
+			TweenService:Create(toggleData.Label, TweenInfo.new(0.3), {
+				TextColor3 = CurrentTheme.Text
+			}):Play()
+			TweenService:Create(toggleData.CheckBox, TweenInfo.new(0.3), {
+				BackgroundColor3 = CurrentTheme.CheckBoxBg
+			}):Play()
+			if toggleData.Indicator then
+				TweenService:Create(toggleData.Indicator, TweenInfo.new(0.3), {
+					BackgroundColor3 = CurrentTheme.Accent
+				}):Play()
+			end
+		end
+		
+		-- Обновляем слайдеры
+		for _, sliderData in pairs(uiElements.sliders) do
+			TweenService:Create(sliderData.Frame, TweenInfo.new(0.3), {
+				BackgroundColor3 = CurrentTheme.ElementBg
+			}):Play()
+			TweenService:Create(sliderData.Label, TweenInfo.new(0.3), {
+				TextColor3 = CurrentTheme.Text
+			}):Play()
+			TweenService:Create(sliderData.ValueLabel, TweenInfo.new(0.3), {
+				TextColor3 = CurrentTheme.Accent
+			}):Play()
+			TweenService:Create(sliderData.Fill, TweenInfo.new(0.3), {
+				BackgroundColor3 = CurrentTheme.Accent
+			}):Play()
+		end
+		
+		-- Обновляем текстовые поля
+		for _, textData in pairs(uiElements.textInputs) do
+			TweenService:Create(textData.Frame, TweenInfo.new(0.3), {
+				BackgroundColor3 = CurrentTheme.ElementBg
+			}):Play()
+			TweenService:Create(textData.Label, TweenInfo.new(0.3), {
+				TextColor3 = CurrentTheme.Text
+			}):Play()
+			TweenService:Create(textData.TextBox, TweenInfo.new(0.3), {
+				TextColor3 = CurrentTheme.Text,
+				PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+			}):Play()
+			TweenService:Create(textData.TextBoxFrame, TweenInfo.new(0.3), {
+				BackgroundColor3 = CurrentTheme.TextBoxBg
+			}):Play()
+			TweenService:Create(textData.SubmitBtn, TweenInfo.new(0.3), {
+				BackgroundColor3 = CurrentTheme.Accent
+			}):Play()
+		end
+		
+		-- Обновляем ListSetting
+		for _, listData in pairs(uiElements.listSettings) do
+			TweenService:Create(listData.Frame, TweenInfo.new(0.3), {
+				BackgroundColor3 = CurrentTheme.ElementBg
+			}):Play()
+			TweenService:Create(listData.Label, TweenInfo.new(0.3), {
+				TextColor3 = CurrentTheme.Text
+			}):Play()
+			
+			for _, optionData in pairs(listData.options) do
+				TweenService:Create(optionData.CheckBox, TweenInfo.new(0.3), {
+					BackgroundColor3 = CurrentTheme.CheckBoxBg
+				}):Play()
+				TweenService:Create(optionData.CheckIndicator, TweenInfo.new(0.3), {
+					BackgroundColor3 = CurrentTheme.Accent
+				}):Play()
+				TweenService:Create(optionData.OptionLabel, TweenInfo.new(0.3), {
+					TextColor3 = CurrentTheme.Text
+				}):Play()
+			end
+		end
+		
+		-- Обновляем ModeSetting
+		for _, modeData in pairs(uiElements.modeSettings) do
+			TweenService:Create(modeData.Frame, TweenInfo.new(0.3), {
+				BackgroundColor3 = CurrentTheme.ElementBg
+			}):Play()
+			TweenService:Create(modeData.Label, TweenInfo.new(0.3), {
+				TextColor3 = CurrentTheme.Text
+			}):Play()
+			
+			for _, optionData in pairs(modeData.options) do
+				TweenService:Create(optionData.RadioOuter, TweenInfo.new(0.3), {
+					BackgroundColor3 = CurrentTheme.CheckBoxBg
+				}):Play()
+				TweenService:Create(optionData.RadioIndicator, TweenInfo.new(0.3), {
+					BackgroundColor3 = CurrentTheme.Accent
+				}):Play()
+				TweenService:Create(optionData.OptionLabel, TweenInfo.new(0.3), {
+					TextColor3 = CurrentTheme.Text
+				}):Play()
+			end
+		end
+		
+		-- Обновляем табы
+		for _, tabBtn in pairs(TabContainer:GetChildren()) do
+			if tabBtn:IsA("TextButton") then
+				local isActive = tabBtn.BackgroundColor3 == CurrentTheme.HeaderStart
+				TweenService:Create(tabBtn, TweenInfo.new(0.3), {
+					BackgroundColor3 = isActive and CurrentTheme.HeaderStart or CurrentTheme.ElementBg,
+					TextColor3 = isActive and Color3.new(1,1,1) or CurrentTheme.Text
+				}):Play()
+			end
+		end
+	end
+	
 	-- Функция смены темы
 	local function ChangeTheme()
 		local currentIndex = table.find(ThemeList, CurrentThemeName) or 1
@@ -511,7 +655,7 @@ function Library:CreateWindow(settings)
 		CurrentThemeName = ThemeList[nextIndex]
 		CurrentTheme = Themes[CurrentThemeName]
 		
-		-- Обновляем все цвета
+		-- Обновляем основные элементы
 		MainFrame.BackgroundColor3 = CurrentTheme.WindowEnd
 		MainGradient.Color = ColorSequence.new{
 			ColorSequenceKeypoint.new(0, CurrentTheme.WindowStart),
@@ -535,8 +679,11 @@ function Library:CreateWindow(settings)
 		
 		-- TabContainer
 		if TabContainer then
-			TabContainer.BackgroundColor3 = CurrentTheme == Themes.Light and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
+			TabContainer.BackgroundColor3 = CurrentThemeName == "Light" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
 		end
+		
+		-- Обновляем все UI элементы
+		UpdateAllElementsTheme()
 		
 		Library:Notify("Тема изменена на: " .. CurrentThemeName)
 	end
@@ -559,10 +706,7 @@ function Library:CreateWindow(settings)
 	TabContainer.Size = UDim2.new(0, 130, 1, -55)
 	TabContainer.Position = UDim2.new(0, 10, 0, 45)
 	TabContainer.BackgroundTransparency = 0.6
-	TabContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	if CurrentTheme == Themes.Light then
-		TabContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	end
+	TabContainer.BackgroundColor3 = CurrentThemeName == "Light" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
 	TabContainer.BorderSizePixel = 0
 	TabContainer.ScrollBarThickness = 0
 	TabContainer.Parent = MainFrame
@@ -613,7 +757,7 @@ function Library:CreateWindow(settings)
 		Page.Name = name
 		Page.Size = UDim2.new(1, 0, 1, 0)
 		Page.BackgroundTransparency = 1
-		Page.ScrollBarThickness = 3
+			Page.ScrollBarThickness = 3
 		Page.Visible = false
 		Page.Parent = PagesFolder
 		
@@ -668,6 +812,12 @@ function Library:CreateWindow(settings)
 			
 			AddGloss(Btn)
 			
+			-- Сохраняем для обновления темы
+			table.insert(uiElements.buttons, {
+				Button = Btn,
+				Stroke = Stroke
+			})
+			
 			Btn.MouseButton1Click:Connect(function()
 				callback()
 				TweenService:Create(Btn, TweenInfo.new(0.1), {Size = UDim2.new(1, -4, 0, 31)}):Play()
@@ -702,7 +852,7 @@ function Library:CreateWindow(settings)
 			local CheckBox = Instance.new("Frame")
 			CheckBox.Size = UDim2.new(0, 20, 0, 20)
 			CheckBox.Position = UDim2.new(1, -30, 0.5, -10)
-			CheckBox.BackgroundColor3 = Color3.fromRGB(240,240,240)
+			CheckBox.BackgroundColor3 = CurrentTheme.CheckBoxBg
 			CheckBox.Parent = Frame
 			
 			local CheckCorner = Instance.new("UICorner")
@@ -721,6 +871,14 @@ function Library:CreateWindow(settings)
 			IndCorner.Parent = CheckIndicator
 			
 			local state = default
+			
+			-- Сохраняем для обновления темы
+			table.insert(uiElements.toggles, {
+				Frame = Frame,
+				Label = Label,
+				CheckBox = CheckBox,
+				Indicator = CheckIndicator
+			})
 			
 			Frame.MouseButton1Click:Connect(function()
 				state = not state
@@ -764,7 +922,7 @@ function Library:CreateWindow(settings)
 			Track.Text = ""
 			Track.Size = UDim2.new(1, -20, 0, 10)
 			Track.Position = UDim2.new(0, 10, 0, 30)
-			Track.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+			Track.BackgroundColor3 = CurrentThemeName == "Dark" and Color3.fromRGB(80, 80, 85) or Color3.fromRGB(200, 200, 200)
 			Track.AutoButtonColor = false
 			Track.Parent = Frame
 			
@@ -780,6 +938,15 @@ function Library:CreateWindow(settings)
 			local FillCorner = Instance.new("UICorner")
 			FillCorner.CornerRadius = UDim.new(1, 0)
 			FillCorner.Parent = Fill
+			
+			-- Сохраняем для обновления темы
+			table.insert(uiElements.sliders, {
+				Frame = Frame,
+				Label = Label,
+				ValueLabel = ValueLabel,
+				Track = Track,
+				Fill = Fill
+			})
 			
 			local isDragging = false
 			
@@ -836,10 +1003,7 @@ function Library:CreateWindow(settings)
 			local TextBoxFrame = Instance.new("Frame")
 			TextBoxFrame.Size = UDim2.new(1, -20, 0, 20)
 			TextBoxFrame.Position = UDim2.new(0, 10, 0, 25)
-			TextBoxFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
-			if CurrentTheme == Themes.Dark then
-				TextBoxFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-			end
+			TextBoxFrame.BackgroundColor3 = CurrentTheme.TextBoxBg
 			TextBoxFrame.Parent = Frame
 			
 			local TextBoxCorner = Instance.new("UICorner")
@@ -875,19 +1039,28 @@ function Library:CreateWindow(settings)
 			SubmitCorner.CornerRadius = UDim.new(0, 4)
 			SubmitCorner.Parent = SubmitBtn
 			
+			-- Сохраняем для обновления темы
+			table.insert(uiElements.textInputs, {
+				Frame = Frame,
+				Label = Label,
+				TextBoxFrame = TextBoxFrame,
+				TextBox = TextBox,
+				SubmitBtn = SubmitBtn
+			})
+			
 			-- Фокус на текстовое поле
 			TextBox.Focused:Connect(function()
 				TweenService:Create(TextBoxFrame, TweenInfo.new(0.2), {
-						BackgroundColor3 = Color3.fromRGB(220, 220, 230),
-						Size = UDim2.new(1, -50, 0, 20)
+					BackgroundColor3 = CurrentThemeName == "Dark" and Color3.fromRGB(60, 60, 65) or Color3.fromRGB(220, 220, 230),
+					Size = UDim2.new(1, -50, 0, 20)
 				}):Play()
 				SubmitBtn.Visible = true
 			end)
 			
 			TextBox.FocusLost:Connect(function(enterPressed)
 				TweenService:Create(TextBoxFrame, TweenInfo.new(0.2), {
-						BackgroundColor3 = CurrentTheme == Themes.Dark and Color3.fromRGB(40, 40, 45) or Color3.fromRGB(240, 240, 240),
-						Size = UDim2.new(1, -20, 0, 20)
+					BackgroundColor3 = CurrentTheme.TextBoxBg,
+					Size = UDim2.new(1, -20, 0, 20)
 				}):Play()
 				SubmitBtn.Visible = false
 				
@@ -946,6 +1119,7 @@ function Library:CreateWindow(settings)
 			OptionsLayout.Parent = OptionsFrame
 			
 			local selectedOptions = default or {}
+			local optionElements = {}
 			
 			for i, option in pairs(options) do
 				local OptionFrame = Instance.new("TextButton")
@@ -958,7 +1132,7 @@ function Library:CreateWindow(settings)
 				local CheckBox = Instance.new("Frame")
 				CheckBox.Size = UDim2.new(0, 15, 0, 15)
 				CheckBox.Position = UDim2.new(0, 0, 0.5, -7.5)
-				CheckBox.BackgroundColor3 = Color3.fromRGB(240,240,240)
+				CheckBox.BackgroundColor3 = CurrentTheme.CheckBoxBg
 				CheckBox.Parent = OptionFrame
 				
 				local CheckCorner = Instance.new("UICorner")
@@ -987,6 +1161,12 @@ function Library:CreateWindow(settings)
 				OptionLabel.TextSize = 12
 				OptionLabel.Parent = OptionFrame
 				
+				table.insert(optionElements, {
+					CheckBox = CheckBox,
+					CheckIndicator = CheckIndicator,
+					OptionLabel = OptionLabel
+				})
+				
 				OptionFrame.MouseButton1Click:Connect(function()
 					selectedOptions[option] = not selectedOptions[option]
 					TweenService:Create(CheckIndicator, TweenInfo.new(0.2), {
@@ -1004,6 +1184,13 @@ function Library:CreateWindow(settings)
 					callback(selectedOptions, selectedArray)
 				end)
 			end
+			
+			-- Сохраняем для обновления темы
+			table.insert(uiElements.listSettings, {
+				Frame = Frame,
+				Label = Label,
+				options = optionElements
+			})
 		end
 		
 		-- ModeSetting - выбор одного из нескольких
@@ -1041,6 +1228,7 @@ function Library:CreateWindow(settings)
 			
 			local selectedMode = default or options[1]
 			local modeButtons = {}
+			local optionElements = {}
 			
 			for i, option in pairs(options) do
 				local OptionFrame = Instance.new("TextButton")
@@ -1053,7 +1241,7 @@ function Library:CreateWindow(settings)
 				local RadioOuter = Instance.new("Frame")
 				RadioOuter.Size = UDim2.new(0, 15, 0, 15)
 				RadioOuter.Position = UDim2.new(0, 0, 0.5, -7.5)
-				RadioOuter.BackgroundColor3 = Color3.fromRGB(240,240,240)
+				RadioOuter.BackgroundColor3 = CurrentTheme.CheckBoxBg
 				RadioOuter.Parent = OptionFrame
 				
 				local RadioCorner = Instance.new("UICorner")
@@ -1087,6 +1275,12 @@ function Library:CreateWindow(settings)
 					Indicator = RadioIndicator
 				}
 				
+				table.insert(optionElements, {
+					RadioOuter = RadioOuter,
+					RadioIndicator = RadioIndicator,
+					OptionLabel = OptionLabel
+				})
+				
 				OptionFrame.MouseButton1Click:Connect(function()
 					-- Сбрасываем все индикаторы
 					for mode, btnData in pairs(modeButtons) do
@@ -1104,6 +1298,13 @@ function Library:CreateWindow(settings)
 					callback(selectedMode)
 				end)
 			end
+			
+			-- Сохраняем для обновления темы
+			table.insert(uiElements.modeSettings, {
+				Frame = Frame,
+				Label = Label,
+				options = optionElements
+			})
 		end
 		
 		return Elements

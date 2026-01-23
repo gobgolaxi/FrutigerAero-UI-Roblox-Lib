@@ -28,11 +28,24 @@ local Themes = {
 		Accent = Color3.fromRGB(0, 255, 255), -- Cyan Neon
 		Stroke = Color3.fromRGB(80, 80, 90),
 		GlassTransparency = 0.15
+	},
+	Purple = {
+		WindowStart = Color3.fromRGB(230, 230, 250),
+		WindowEnd = Color3.fromRGB(216, 191, 216),
+		HeaderStart = Color3.fromRGB(147, 112, 219),
+		HeaderEnd = Color3.fromRGB(102, 51, 153),
+		ElementBg = Color3.fromRGB(255, 255, 255),
+		Text = Color3.fromRGB(20, 20, 20),
+		Accent = Color3.fromRGB(186, 85, 211), -- Medium Orchid
+		Stroke = Color3.fromRGB(180, 160, 220),
+		GlassTransparency = 0.15
 	}
 }
 
 -- Текущая тема (по дефолту Light)
 local CurrentTheme = Themes.Light
+local ThemeList = {"Light", "Dark", "Purple"}
+local CurrentThemeName = "Light"
 
 -- Хелпер для глянца
 local function AddGloss(instance)
@@ -134,7 +147,10 @@ function Library:CreateWindow(settings)
 	local ThemeName = settings.Theme or "Light"
 	local ToggleKey = settings.Key or Enum.KeyCode.M
 	
-	if ThemeName == "Dark" then CurrentTheme = Themes.Dark else CurrentTheme = Themes.Light end
+	if ThemeName == "Dark" then CurrentTheme = Themes.Dark 
+	elseif ThemeName == "Purple" then CurrentTheme = Themes.Purple
+	else CurrentTheme = Themes.Light end
+	CurrentThemeName = ThemeName
 
 	local ScreenGui = Instance.new("ScreenGui")
 	ScreenGui.Name = "AeroLib"
@@ -217,7 +233,7 @@ function Library:CreateWindow(settings)
 	
 	local Title = Instance.new("TextLabel")
 	Title.Text = TitleText
-	Title.Size = UDim2.new(1, -100, 1, 0)
+	Title.Size = UDim2.new(1, -160, 1, 0) -- Уменьшил ширину для кнопок
 	Title.Position = UDim2.new(0, 15, 0, 0)
 	Title.BackgroundTransparency = 1
 	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -235,6 +251,22 @@ function Library:CreateWindow(settings)
 	TitleShadow.Parent = TopBar
 
 	MakeDraggable(TopBar, MainFrame)
+	
+	-- === КНОПКА СМЕНЫ ТЕМЫ (левее кнопки закрытия) ===
+	local ThemeBtn = Instance.new("TextButton")
+	ThemeBtn.Size = UDim2.new(0, 30, 0, 30)
+	ThemeBtn.Position = UDim2.new(1, -70, 0.5, -15) -- Слева от кнопки закрытия
+	ThemeBtn.BackgroundColor3 = CurrentTheme.Accent
+	ThemeBtn.BackgroundTransparency = 0.3
+	ThemeBtn.Text = "🎨"
+	ThemeBtn.Font = Enum.Font.GothamBold
+	ThemeBtn.TextColor3 = Color3.new(1,1,1)
+	ThemeBtn.TextSize = 14
+	ThemeBtn.Parent = TopBar
+	
+	local ThemeCorner = Instance.new("UICorner")
+	ThemeCorner.CornerRadius = UDim.new(0, 6)
+	ThemeCorner.Parent = ThemeBtn
 	
 	-- === КНОПКА ЗАКРЫТИЯ ===
 	local CloseBtn = Instance.new("TextButton")
@@ -280,6 +312,51 @@ function Library:CreateWindow(settings)
 	-- Делаем кнопку открытия перетаскиваемой
 	MakeDraggable(OpenButton, OpenButton)
 	
+	-- === КНОПКА МАСШТАБИРОВАНИЯ (в правом нижнем углу) ===
+	local ResizeButton = Instance.new("TextButton")
+	ResizeButton.Name = "ResizeButton"
+	ResizeButton.Size = UDim2.new(0, 20, 0, 20)
+	ResizeButton.Position = UDim2.new(1, -22, 1, -22)
+	ResizeButton.BackgroundColor3 = CurrentTheme.Accent
+	ResizeButton.BackgroundTransparency = 0.3
+	ResizeButton.Text = "↘"
+	ResizeButton.TextColor3 = Color3.new(1, 1, 1)
+	ResizeButton.Font = Enum.Font.GothamBold
+	ResizeButton.TextSize = 12
+	ResizeButton.Parent = MainFrame
+	
+	local ResizeCorner = Instance.new("UICorner")
+	ResizeCorner.CornerRadius = UDim.new(0, 4)
+	ResizeCorner.Parent = ResizeButton
+	
+	local isResizing = false
+	local startSize = MainFrame.Size
+	local startPos
+	
+	ResizeButton.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			isResizing = true
+			startSize = MainFrame.Size
+			startPos = input.Position
+		end
+	end)
+	
+	UserInputService.InputChanged:Connect(function(input)
+		if isResizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - startPos
+			local newWidth = math.max(400, startSize.Width.Offset + delta.X)
+			local newHeight = math.max(300, startSize.Height.Offset + delta.Y)
+			
+			MainFrame.Size = UDim2.new(0, newWidth, 0, newHeight)
+		end
+	end)
+	
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			isResizing = false
+		end
+	end)
+	
 	-- === ЛОГИКА ОТКРЫТИЯ/ЗАКРЫТИЯ ===
 	local isOpen = true
 	
@@ -300,6 +377,45 @@ function Library:CreateWindow(settings)
 	
 	CloseBtn.MouseButton1Click:Connect(CloseUI)
 	OpenButton.MouseButton1Click:Connect(OpenUI)
+	
+	-- Функция смены темы
+	local function ChangeTheme()
+		local currentIndex = table.find(ThemeList, CurrentThemeName) or 1
+		local nextIndex = currentIndex % #ThemeList + 1
+		CurrentThemeName = ThemeList[nextIndex]
+		CurrentTheme = Themes[CurrentThemeName]
+		
+		-- Обновляем все цвета
+		MainFrame.BackgroundColor3 = CurrentTheme.WindowEnd
+		MainGradient.Color = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, CurrentTheme.WindowStart),
+			ColorSequenceKeypoint.new(1, CurrentTheme.WindowEnd)
+		}
+		Stroke.Color = CurrentTheme.Stroke
+		
+		-- TopBar
+		TopBar.BackgroundColor3 = CurrentTheme.HeaderStart
+		TopBarGradient.Color = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, CurrentTheme.HeaderStart),
+			ColorSequenceKeypoint.new(1, CurrentTheme.HeaderEnd)
+		}
+		HideBottom.BackgroundColor3 = CurrentTheme.HeaderEnd
+		
+		-- Кнопки
+		ThemeBtn.BackgroundColor3 = CurrentTheme.Accent
+		ResizeButton.BackgroundColor3 = CurrentTheme.Accent
+		OpenButton.BackgroundColor3 = CurrentTheme.HeaderStart
+		OpenButtonStroke.Color = CurrentTheme.Stroke
+		
+		-- TabContainer
+		if TabContainer then
+			TabContainer.BackgroundColor3 = CurrentTheme == Themes.Light and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
+		end
+		
+		Library:Notify("Тема изменена на: " .. CurrentThemeName)
+	end
+	
+	ThemeBtn.MouseButton1Click:Connect(ChangeTheme)
 	
 	-- Горячая клавиша
 	UserInputService.InputBegan:Connect(function(input, processed)
@@ -569,118 +685,108 @@ function Library:CreateWindow(settings)
 			end)
 		end
 		
-function Elements:StringOption(text, placeholder, default, callback)
-    local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(1, 0, 0, 50)
-    Frame.BackgroundColor3 = CurrentTheme.ElementBg
-    Frame.Parent = Page
-    
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8)
-    Corner.Parent = Frame
-    
-    local Label = Instance.new("TextLabel")
-    Label.Text = text
-    Label.Position = UDim2.new(0, 10, 0, 5)
-    Label.Size = UDim2.new(1, -20, 0, 20)
-    Label.BackgroundTransparency = 1
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.TextColor3 = CurrentTheme.Text
-    Label.Font = Enum.Font.Gotham
-    Label.TextSize = 14
-    Label.Parent = Frame
-    
-    local TextBoxFrame = Instance.new("Frame")
-    TextBoxFrame.Size = UDim2.new(1, -20, 0, 20)
-    TextBoxFrame.Position = UDim2.new(0, 10, 0, 25)
-    TextBoxFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
-    if CurrentTheme == Themes.Dark then
-        TextBoxFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    end
-    TextBoxFrame.Parent = Frame
-    
-    local TextBoxCorner = Instance.new("UICorner")
-    TextBoxCorner.CornerRadius = UDim.new(0, 4)
-    TextBoxCorner.Parent = TextBoxFrame
-    
-    local TextBox = Instance.new("TextBox")
-    TextBox.Size = UDim2.new(1, -10, 1, 0)
-    TextBox.Position = UDim2.new(0, 5, 0, 0)
-    TextBox.BackgroundTransparency = 1
-    TextBox.Text = default or ""
-    TextBox.PlaceholderText = placeholder or "Введите текст..."
-    TextBox.TextColor3 = CurrentTheme.Text
-    TextBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-    TextBox.Font = Enum.Font.Gotham
-    TextBox.TextSize = 14
-    TextBox.TextXAlignment = Enum.TextXAlignment.Left
-    TextBox.ClearTextOnFocus = false
-    TextBox.Parent = TextBoxFrame
-    
-    local SubmitBtn = Instance.new("TextButton")
-    SubmitBtn.Text = "✓"
-    SubmitBtn.Size = UDim2.new(0, 25, 0, 20)
-    SubmitBtn.Position = UDim2.new(1, -30, 0.5, -10)
-    SubmitBtn.BackgroundColor3 = CurrentTheme.Accent
-    SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SubmitBtn.Font = Enum.Font.GothamBold
-    SubmitBtn.TextSize = 12
-    SubmitBtn.Visible = false
-    SubmitBtn.Parent = Frame
-    
-    local SubmitCorner = Instance.new("UICorner")
-    SubmitCorner.CornerRadius = UDim.new(0, 4)
-    SubmitCorner.Parent = SubmitBtn
-    
-    -- Сохраняем значение при любом изменении
-    local lastText = TextBox.Text
-    TextBox:GetPropertyChangedSignal("Text"):Connect(function()
-        if TextBox.Text ~= lastText then
-            lastText = TextBox.Text
-            callback(TextBox.Text) -- Автоматически сохраняем при каждом изменении
-        end
-    end)
-    
-    -- Фокус на текстовое поле
-    TextBox.Focused:Connect(function()
-        TweenService:Create(TextBoxFrame, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(220, 220, 230),
-            Size = UDim2.new(1, -50, 0, 20)
-        }):Play()
-        SubmitBtn.Visible = true
-    end)
-    
-    TextBox.FocusLost:Connect(function(enterPressed)
-        TweenService:Create(TextBoxFrame, TweenInfo.new(0.2), {
-            BackgroundColor3 = CurrentTheme == Themes.Dark and Color3.fromRGB(40, 40, 45) or Color3.fromRGB(240, 240, 240),
-            Size = UDim2.new(1, -20, 0, 20)
-        }):Play()
-        SubmitBtn.Visible = false
-        
-        -- Сохраняем даже без Enter
-        if TextBox.Text ~= lastText then
-            lastText = TextBox.Text
-            callback(TextBox.Text)
-        end
-    end)
-    
-    -- Кнопка подтверждения (дополнительный способ)
-    SubmitBtn.MouseButton1Click:Connect(function()
-        callback(TextBox.Text)
-        TextBox:ReleaseFocus()
-    end)
-    
-    -- Анимация при нажатии на кнопку
-    SubmitBtn.MouseButton1Down:Connect(function()
-        TweenService:Create(SubmitBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 23, 0, 18)}):Play()
-    end)
-    
-    SubmitBtn.MouseButton1Up:Connect(function()
-        TweenService:Create(SubmitBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 25, 0, 20)}):Play()
-    end)
-end
+		-- StringOption - текстовое поле для ввода
+		function Elements:StringOption(text, placeholder, default, callback)
+			local Frame = Instance.new("Frame")
+			Frame.Size = UDim2.new(1, 0, 0, 50)
+			Frame.BackgroundColor3 = CurrentTheme.ElementBg
+			Frame.Parent = Page
+			
+			local Corner = Instance.new("UICorner")
+			Corner.CornerRadius = UDim.new(0, 8)
+			Corner.Parent = Frame
+			
+			local Label = Instance.new("TextLabel")
+			Label.Text = text
+			Label.Position = UDim2.new(0, 10, 0, 5)
+			Label.Size = UDim2.new(1, -20, 0, 20)
+			Label.BackgroundTransparency = 1
+			Label.TextXAlignment = Enum.TextXAlignment.Left
+			Label.TextColor3 = CurrentTheme.Text
+			Label.Font = Enum.Font.Gotham
+			Label.TextSize = 14
+			Label.Parent = Frame
+			
+			local TextBoxFrame = Instance.new("Frame")
+			TextBoxFrame.Size = UDim2.new(1, -20, 0, 20)
+			TextBoxFrame.Position = UDim2.new(0, 10, 0, 25)
+			TextBoxFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+			if CurrentTheme == Themes.Dark then
+				TextBoxFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+			end
+			TextBoxFrame.Parent = Frame
+			
+			local TextBoxCorner = Instance.new("UICorner")
+			TextBoxCorner.CornerRadius = UDim.new(0, 4)
+			TextBoxCorner.Parent = TextBoxFrame
+			
+			local TextBox = Instance.new("TextBox")
+			TextBox.Size = UDim2.new(1, -10, 1, 0)
+			TextBox.Position = UDim2.new(0, 5, 0, 0)
+			TextBox.BackgroundTransparency = 1
+			TextBox.Text = default or ""
+			TextBox.PlaceholderText = placeholder or "Введите текст..."
+			TextBox.TextColor3 = CurrentTheme.Text
+			TextBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+			TextBox.Font = Enum.Font.Gotham
+			TextBox.TextSize = 14
+			TextBox.TextXAlignment = Enum.TextXAlignment.Left
+			TextBox.ClearTextOnFocus = false
+			TextBox.Parent = TextBoxFrame
+			
+			local SubmitBtn = Instance.new("TextButton")
+			SubmitBtn.Text = "✓"
+			SubmitBtn.Size = UDim2.new(0, 25, 0, 20)
+			SubmitBtn.Position = UDim2.new(1, -30, 0.5, -10)
+			SubmitBtn.BackgroundColor3 = CurrentTheme.Accent
+			SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			SubmitBtn.Font = Enum.Font.GothamBold
+			SubmitBtn.TextSize = 12
+			SubmitBtn.Visible = false
+			SubmitBtn.Parent = Frame
+			
+			local SubmitCorner = Instance.new("UICorner")
+			SubmitCorner.CornerRadius = UDim.new(0, 4)
+			SubmitCorner.Parent = SubmitBtn
+			
+			-- Фокус на текстовое поле
+			TextBox.Focused:Connect(function()
+				TweenService:Create(TextBoxFrame, TweenInfo.new(0.2), {
+						BackgroundColor3 = Color3.fromRGB(220, 220, 230),
+						Size = UDim2.new(1, -50, 0, 20)
+				}):Play()
+				SubmitBtn.Visible = true
+			end)
+			
+			TextBox.FocusLost:Connect(function(enterPressed)
+				TweenService:Create(TextBoxFrame, TweenInfo.new(0.2), {
+						BackgroundColor3 = CurrentTheme == Themes.Dark and Color3.fromRGB(40, 40, 45) or Color3.fromRGB(240, 240, 240),
+						Size = UDim2.new(1, -20, 0, 20)
+				}):Play()
+				SubmitBtn.Visible = false
+				
+				if enterPressed then
+					callback(TextBox.Text)
+				end
+			end)
+			
+			-- Кнопка подтверждения
+			SubmitBtn.MouseButton1Click:Connect(function()
+				callback(TextBox.Text)
+				TextBox:ReleaseFocus()
+			end)
+			
+			-- Анимация при нажатии на кнопку
+			SubmitBtn.MouseButton1Down:Connect(function()
+				TweenService:Create(SubmitBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 23, 0, 18)}):Play()
+			end)
+			
+			SubmitBtn.MouseButton1Up:Connect(function()
+				TweenService:Create(SubmitBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 25, 0, 20)}):Play()
+			end)
+		end
 		
-		-- НОВЫЙ: ListSetting - множественный выбор
+		-- ListSetting - множественный выбор
 		function Elements:ListSetting(text, options, default, callback)
 			local Frame = Instance.new("Frame")
 			Frame.Size = UDim2.new(1, 0, 0, 35 + (#options * 25))
@@ -774,7 +880,7 @@ end
 			end
 		end
 		
-		-- НОВЫЙ: ModeSetting - выбор одного из нескольких
+		-- ModeSetting - выбор одного из нескольких
 		function Elements:ModeSetting(text, options, default, callback)
 			local Frame = Instance.new("Frame")
 			Frame.Size = UDim2.new(1, 0, 0, 35 + (#options * 25))

@@ -47,6 +47,14 @@ local CurrentTheme = Themes.Light
 local ThemeList = {"Light", "Dark", "Purple"}
 local CurrentThemeName = "Light"
 
+-- Система уведомлений
+local activeNotifications = {}
+local notificationYOffset = 0
+local NOTIFICATION_WIDTH = 250
+local NOTIFICATION_HEIGHT = 50
+local NOTIFICATION_PADDING = 10
+local NOTIFICATION_DURATION = 3
+
 -- Хелпер для глянца
 local function AddGloss(instance)
 	local Gloss = Instance.new("Frame")
@@ -100,45 +108,163 @@ local function MakeDraggable(topbarobject, object)
 	end)
 end
 
--- Уведомление снизу с авто-шириной
+-- Улучшенная система уведомлений
 function Library:Notify(text)
 	local ScreenGui = game.CoreGui:FindFirstChild("AeroLib") or game.Players.LocalPlayer.PlayerGui:FindFirstChild("AeroLib")
 	if not ScreenGui then return end
 	
-	-- Определяем ширину по тексту
-	local tempLabel = Instance.new("TextLabel")
-	tempLabel.Font = Enum.Font.GothamBold
-	tempLabel.TextSize = 14
-	tempLabel.Text = text
+	-- Создаем контейнер для уведомлений если его нет
+	local NotificationContainer = ScreenGui:FindFirstChild("NotificationContainer")
+	if not NotificationContainer then
+		NotificationContainer = Instance.new("Frame")
+		NotificationContainer.Name = "NotificationContainer"
+		NotificationContainer.Size = UDim2.new(0, NOTIFICATION_WIDTH + 20, 1, 0)
+		NotificationContainer.Position = UDim2.new(1, -NOTIFICATION_WIDTH - 20, 0, 0)
+		NotificationContainer.BackgroundTransparency = 1
+		NotificationContainer.Parent = ScreenGui
+	end
 	
-	-- Приблизительный расчет ширины (примерно 8 пикселей на символ)
-	local textWidth = math.max(200, #text * 8 + 40)
-	tempLabel:Destroy()
+	-- Рассчитываем позицию для нового уведомления
+	local notificationId = #activeNotifications + 1
+	local startPosition = UDim2.new(0, 0, 1, 0) -- Начальная позиция внизу
 	
 	-- Создаем уведомление
-	local Notif = Instance.new("TextLabel")
-	Notif.Text = text
-	Notif.Size = UDim2.new(0, textWidth, 0, 40)
-	Notif.Position = UDim2.new(0.5, -textWidth/2, 1, 0) -- Старт снизу
-	Notif.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	Notif.BackgroundTransparency = 0.5
-	Notif.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Notif.Font = Enum.Font.GothamBold
-	Notif.TextSize = 14
-	Notif.TextWrapped = true
-	Notif.Parent = ScreenGui
+	local Notif = Instance.new("Frame")
+	Notif.Name = "Notif_" .. notificationId
+	Notif.Size = UDim2.new(0, NOTIFICATION_WIDTH, 0, NOTIFICATION_HEIGHT)
+	Notif.Position = startPosition
+	Notif.BackgroundColor3 = CurrentTheme.HeaderStart
+	Notif.BackgroundTransparency = 0.1
+	Notif.Parent = NotificationContainer
 	
 	local Corner = Instance.new("UICorner")
 	Corner.CornerRadius = UDim.new(0, 8)
 	Corner.Parent = Notif
 	
-	-- Анимация появления
-	TweenService:Create(Notif, TweenInfo.new(0.5, Enum.EasingStyle.Back), {Position = UDim2.new(0.5, -textWidth/2, 1, -60)}):Play()
+	local Stroke = Instance.new("UIStroke")
+	Stroke.Color = CurrentTheme.Stroke
+	Stroke.Thickness = 1
+	Stroke.Parent = Notif
 	
-	task.delay(3, function()
-		TweenService:Create(Notif, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {Position = UDim2.new(0.5, -textWidth/2, 1, 0)}):Play()
-		task.wait(0.5)
-		Notif:Destroy()
+	-- Градиент
+	local Gradient = Instance.new("UIGradient")
+	Gradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, CurrentTheme.HeaderStart),
+		ColorSequenceKeypoint.new(1, CurrentTheme.HeaderEnd)
+	}
+	Gradient.Rotation = 90
+	Gradient.Parent = Notif
+	
+	AddGloss(Notif)
+	
+	-- Иконка уведомления
+	local Icon = Instance.new("TextLabel")
+	Icon.Text = "💡"
+	Icon.Size = UDim2.new(0, 30, 1, 0)
+	Icon.Position = UDim2.new(0, 5, 0, 0)
+	Icon.BackgroundTransparency = 1
+	Icon.TextColor3 = Color3.new(1, 1, 1)
+	Icon.Font = Enum.Font.GothamBold
+	Icon.TextSize = 16
+	Icon.TextXAlignment = Enum.TextXAlignment.Center
+	Icon.Parent = Notif
+	
+	-- Текст уведомления
+	local TextLabel = Instance.new("TextLabel")
+	TextLabel.Text = text
+	TextLabel.Size = UDim2.new(1, -40, 1, 0)
+	TextLabel.Position = UDim2.new(0, 35, 0, 0)
+	TextLabel.BackgroundTransparency = 1
+	TextLabel.TextColor3 = Color3.new(1, 1, 1)
+	TextLabel.Font = Enum.Font.Gotham
+	TextLabel.TextSize = 12
+	TextLabel.TextWrapped = true
+	TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+	TextLabel.TextYAlignment = Enum.TextYAlignment.Center
+	TextLabel.Parent = Notif
+	
+	-- Прогресс бар (таймер)
+	local ProgressBar = Instance.new("Frame")
+	ProgressBar.Name = "ProgressBar"
+	ProgressBar.Size = UDim2.new(0, 0, 0, 3)
+	ProgressBar.Position = UDim2.new(0, 0, 1, -3)
+	ProgressBar.BackgroundColor3 = CurrentTheme.Accent
+	ProgressBar.BorderSizePixel = 0
+	ProgressBar.Parent = Notif
+	
+	local ProgressCorner = Instance.new("UICorner")
+	ProgressCorner.CornerRadius = UDim.new(0, 2)
+	ProgressCorner.Parent = ProgressBar
+	
+	-- Анимация появления
+	local targetPosition = UDim2.new(0, 0, 1, -((NOTIFICATION_HEIGHT + NOTIFICATION_PADDING) * (notificationId)))
+	
+	-- Сдвигаем все существующие уведомления вверх
+	for i, existingNotif in pairs(activeNotifications) do
+		local newPos = UDim2.new(0, 0, 1, -((NOTIFICATION_HEIGHT + NOTIFICATION_PADDING) * i))
+		TweenService:Create(existingNotif, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Position = newPos}):Play()
+	end
+	
+	TweenService:Create(Notif, TweenInfo.new(0.5, Enum.EasingStyle.Back), {Position = targetPosition}):Play()
+	
+	-- Анимация прогресс бара
+	TweenService:Create(ProgressBar, TweenInfo.new(NOTIFICATION_DURATION, Enum.EasingStyle.Linear), {Size = UDim2.new(1, 0, 0, 3)}):Play()
+	
+	-- Добавляем в список активных уведомлений
+	table.insert(activeNotifications, 1, Notif) -- Добавляем в начало
+	
+	-- Автоматическое удаление
+	task.delay(NOTIFICATION_DURATION, function()
+		-- Удаляем это уведомление из списка
+		for i, notif in pairs(activeNotifications) do
+			if notif == Notif then
+				table.remove(activeNotifications, i)
+				break
+			end
+		end
+		
+		-- Анимация исчезновения
+		TweenService:Create(Notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Position = startPosition, BackgroundTransparency = 1}):Play()
+		
+		-- Обновляем позиции оставшихся уведомлений
+		task.wait(0.3)
+		for i, existingNotif in pairs(activeNotifications) do
+			local newPos = UDim2.new(0, 0, 1, -((NOTIFICATION_HEIGHT + NOTIFICATION_PADDING) * i))
+			TweenService:Create(existingNotif, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Position = newPos}):Play()
+		end
+		
+		task.wait(0.3)
+		if Notif then
+			Notif:Destroy()
+		end
+	end)
+	
+	-- Клик для быстрого закрытия
+	Notif.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			-- Удаляем из списка
+			for i, notif in pairs(activeNotifications) do
+				if notif == Notif then
+					table.remove(activeNotifications, i)
+					break
+				end
+			end
+			
+			-- Анимация закрытия
+			TweenService:Create(Notif, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 0, 0, NOTIFICATION_HEIGHT)}):Play()
+			task.wait(0.2)
+			
+			-- Обновляем позиции остальных
+			for i, existingNotif in pairs(activeNotifications) do
+				local newPos = UDim2.new(0, 0, 1, -((NOTIFICATION_HEIGHT + NOTIFICATION_PADDING) * i))
+				TweenService:Create(existingNotif, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Position = newPos}):Play()
+			end
+			
+			task.wait(0.1)
+			if Notif then
+				Notif:Destroy()
+			end
+		end
 	end)
 end
 

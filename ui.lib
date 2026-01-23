@@ -569,144 +569,115 @@ function Library:CreateWindow(settings)
 			end)
 		end
 		
-		-- НОВЫЙ: StringOption - текстовое поле для ввода
 function Elements:StringOption(text, placeholder, default, callback)
-	local Frame = Instance.new("Frame")
-	Frame.Size = UDim2.new(1, 0, 0, 50)
-	Frame.BackgroundColor3 = CurrentTheme.ElementBg
-	Frame.Parent = Page
-	
-	local Corner = Instance.new("UICorner")
-	Corner.CornerRadius = UDim.new(0, 8)
-	Corner.Parent = Frame
-	
-	local Label = Instance.new("TextLabel")
-	Label.Text = text
-	Label.Position = UDim2.new(0, 10, 0, 5)
-	Label.Size = UDim2.new(1, -20, 0, 20)
-	Label.BackgroundTransparency = 1
-	Label.TextXAlignment = Enum.TextXAlignment.Left
-	Label.TextColor3 = CurrentTheme.Text
-	Label.Font = Enum.Font.Gotham
-	Label.TextSize = 14
-	Label.Parent = Frame
-	
-	local TextBoxFrame = Instance.new("Frame")
-	TextBoxFrame.Size = UDim2.new(1, -20, 0, 20)
-	TextBoxFrame.Position = UDim2.new(0, 10, 0, 25)
-	TextBoxFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
-	if CurrentTheme == Themes.Dark then
-		TextBoxFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-	end
-	TextBoxFrame.Parent = Frame
-	
-	local TextBoxCorner = Instance.new("UICorner")
-	TextBoxCorner.CornerRadius = UDim.new(0, 4)
-	TextBoxCorner.Parent = TextBoxFrame
-	
-	local TextBox = Instance.new("TextBox")
-	TextBox.Size = UDim2.new(1, -10, 1, 0)
-	TextBox.Position = UDim2.new(0, 5, 0, 0)
-	TextBox.BackgroundTransparency = 1
-	TextBox.Text = default or ""
-	TextBox.PlaceholderText = placeholder or "Введите текст..."
-	TextBox.TextColor3 = CurrentTheme.Text
-	TextBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-	TextBox.Font = Enum.Font.Gotham
-	TextBox.TextSize = 14
-	TextBox.TextXAlignment = Enum.TextXAlignment.Left
-	TextBox.ClearTextOnFocus = false
-	TextBox.Parent = TextBoxFrame
-	
-	-- Сохраняем текущее значение
-	local currentValue = default or ""
-	
-	-- Функция обновления значения
-	local function updateValue(value)
-		currentValue = value
-		if callback then
-			callback(value) -- Вызываем callback с новым значением
-		end
-	end
-	
-	-- Создаем кнопку подтверждения
-	local SubmitBtn = Instance.new("TextButton")
-	SubmitBtn.Text = "✓"
-	SubmitBtn.Size = UDim2.new(0, 25, 0, 20)
-	SubmitBtn.Position = UDim2.new(1, -30, 0.5, -10)
-	SubmitBtn.BackgroundColor3 = CurrentTheme.Accent
-	SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	SubmitBtn.Font = Enum.Font.GothamBold
-	SubmitBtn.TextSize = 12
-	SubmitBtn.Visible = false
-	SubmitBtn.Parent = Frame
-	
-	local SubmitCorner = Instance.new("UICorner")
-	SubmitCorner.CornerRadius = UDim.new(0, 4)
-	SubmitCorner.Parent = SubmitBtn
-	
-	-- Обработка фокуса на текстовом поле
-	TextBox.Focused:Connect(function()
-		TweenService:Create(TextBoxFrame, TweenInfo.new(0.2), {
-			BackgroundColor3 = Color3.fromRGB(220, 220, 230),
-			Size = UDim2.new(1, -50, 0, 20)
-		}):Play()
-		SubmitBtn.Visible = true
-	end)
-	
-	TextBox.FocusLost:Connect(function(enterPressed)
-		TweenService:Create(TextBoxFrame, TweenInfo.new(0.2), {
-			BackgroundColor3 = CurrentTheme == Themes.Dark and Color3.fromRGB(40, 40, 45) or Color3.fromRGB(240, 240, 240),
-			Size = UDim2.new(1, -20, 0, 20)
-		}):Play()
-		SubmitBtn.Visible = false
-		
-		if enterPressed then
-			local newValue = TextBox.Text
-			updateValue(newValue)
-		end
-	end)
-	
-	-- Кнопка подтверждения
-	SubmitBtn.MouseButton1Click:Connect(function()
-		local newValue = TextBox.Text
-		updateValue(newValue)
-		TextBox:ReleaseFocus()
-	end)
-	
-	-- Анимация кнопки
-	SubmitBtn.MouseButton1Down:Connect(function()
-		TweenService:Create(SubmitBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 23, 0, 18)}):Play()
-	end)
-	
-	SubmitBtn.MouseButton1Up:Connect(function()
-		TweenService:Create(SubmitBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 25, 0, 20)}):Play()
-	end)
-	
-	-- Обновляем значение при изменении текста (постепенно)
-	TextBox:GetPropertyChangedSignal("Text"):Connect(function()
-		-- Можно добавить дебаунс если нужно
-	end)
-	
-	-- Функция для получения текущего значения
-	local function getValue()
-		return currentValue
-	end
-	
-	-- Функция для установки значения извне
-	local function setValue(value)
-		currentValue = value
-		TextBox.Text = value
-		if callback then
-			callback(value)
-		end
-	end
-	
-	-- Возвращаем функции для управления значением
-	return {
-		GetValue = getValue,
-		SetValue = setValue
-	}
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(1, 0, 0, 50)
+    Frame.BackgroundColor3 = CurrentTheme.ElementBg
+    Frame.Parent = Page
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = Frame
+    
+    local Label = Instance.new("TextLabel")
+    Label.Text = text
+    Label.Position = UDim2.new(0, 10, 0, 5)
+    Label.Size = UDim2.new(1, -20, 0, 20)
+    Label.BackgroundTransparency = 1
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.TextColor3 = CurrentTheme.Text
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 14
+    Label.Parent = Frame
+    
+    local TextBoxFrame = Instance.new("Frame")
+    TextBoxFrame.Size = UDim2.new(1, -20, 0, 20)
+    TextBoxFrame.Position = UDim2.new(0, 10, 0, 25)
+    TextBoxFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+    if CurrentTheme == Themes.Dark then
+        TextBoxFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    end
+    TextBoxFrame.Parent = Frame
+    
+    local TextBoxCorner = Instance.new("UICorner")
+    TextBoxCorner.CornerRadius = UDim.new(0, 4)
+    TextBoxCorner.Parent = TextBoxFrame
+    
+    local TextBox = Instance.new("TextBox")
+    TextBox.Size = UDim2.new(1, -10, 1, 0)
+    TextBox.Position = UDim2.new(0, 5, 0, 0)
+    TextBox.BackgroundTransparency = 1
+    TextBox.Text = default or ""
+    TextBox.PlaceholderText = placeholder or "Введите текст..."
+    TextBox.TextColor3 = CurrentTheme.Text
+    TextBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    TextBox.Font = Enum.Font.Gotham
+    TextBox.TextSize = 14
+    TextBox.TextXAlignment = Enum.TextXAlignment.Left
+    TextBox.ClearTextOnFocus = false
+    TextBox.Parent = TextBoxFrame
+    
+    local SubmitBtn = Instance.new("TextButton")
+    SubmitBtn.Text = "✓"
+    SubmitBtn.Size = UDim2.new(0, 25, 0, 20)
+    SubmitBtn.Position = UDim2.new(1, -30, 0.5, -10)
+    SubmitBtn.BackgroundColor3 = CurrentTheme.Accent
+    SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SubmitBtn.Font = Enum.Font.GothamBold
+    SubmitBtn.TextSize = 12
+    SubmitBtn.Visible = false
+    SubmitBtn.Parent = Frame
+    
+    local SubmitCorner = Instance.new("UICorner")
+    SubmitCorner.CornerRadius = UDim.new(0, 4)
+    SubmitCorner.Parent = SubmitBtn
+    
+    -- Сохраняем значение при любом изменении
+    local lastText = TextBox.Text
+    TextBox:GetPropertyChangedSignal("Text"):Connect(function()
+        if TextBox.Text ~= lastText then
+            lastText = TextBox.Text
+            callback(TextBox.Text) -- Автоматически сохраняем при каждом изменении
+        end
+    end)
+    
+    -- Фокус на текстовое поле
+    TextBox.Focused:Connect(function()
+        TweenService:Create(TextBoxFrame, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(220, 220, 230),
+            Size = UDim2.new(1, -50, 0, 20)
+        }):Play()
+        SubmitBtn.Visible = true
+    end)
+    
+    TextBox.FocusLost:Connect(function(enterPressed)
+        TweenService:Create(TextBoxFrame, TweenInfo.new(0.2), {
+            BackgroundColor3 = CurrentTheme == Themes.Dark and Color3.fromRGB(40, 40, 45) or Color3.fromRGB(240, 240, 240),
+            Size = UDim2.new(1, -20, 0, 20)
+        }):Play()
+        SubmitBtn.Visible = false
+        
+        -- Сохраняем даже без Enter
+        if TextBox.Text ~= lastText then
+            lastText = TextBox.Text
+            callback(TextBox.Text)
+        end
+    end)
+    
+    -- Кнопка подтверждения (дополнительный способ)
+    SubmitBtn.MouseButton1Click:Connect(function()
+        callback(TextBox.Text)
+        TextBox:ReleaseFocus()
+    end)
+    
+    -- Анимация при нажатии на кнопку
+    SubmitBtn.MouseButton1Down:Connect(function()
+        TweenService:Create(SubmitBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 23, 0, 18)}):Play()
+    end)
+    
+    SubmitBtn.MouseButton1Up:Connect(function()
+        TweenService:Create(SubmitBtn, TweenInfo.new(0.1), {Size = UDim2.new(0, 25, 0, 20)}):Play()
+    end)
 end
 		
 		-- НОВЫЙ: ListSetting - множественный выбор
